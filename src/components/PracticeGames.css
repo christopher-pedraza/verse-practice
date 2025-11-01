@@ -115,8 +115,39 @@
 
 .verse-with-blanks {
   font-size: 1.3em;
-  line-height: 2;
+  line-height: 2.5;
   color: #333;
+}
+
+.blank-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 3px;
+}
+
+.blank-input {
+  padding: 6px 10px;
+  border: 2px solid #4CAF50;
+  border-radius: 6px;
+  font-size: 0.9em;
+  text-align: center;
+  font-family: inherit;
+  background: #f0f8f0;
+  transition: all 0.2s;
+}
+
+.blank-input:focus {
+  outline: none;
+  border-color: #2e7d32;
+  background: white;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+.hint-length {
+  color: #666;
+  font-size: 0.8em;
+  font-style: italic;
 }
 
 .blank-space {
@@ -198,6 +229,19 @@
   border-color: #4CAF50;
 }
 
+.word-btn.draggable {
+  cursor: move;
+}
+
+.word-btn.dragging {
+  opacity: 0.5;
+}
+
+.word-btn.drag-over {
+  border-color: #FF9800;
+  border-style: dashed;
+}
+
 /* Typing Game */
 .typing-game {
   display: flex;
@@ -211,6 +255,25 @@
   border-radius: 8px;
   color: #1976d2;
   font-weight: 500;
+  line-height: 1.6;
+}
+
+.btn-hint {
+  padding: 10px 20px;
+  background: #FFC107;
+  color: #333;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+  align-self: flex-start;
+}
+
+.btn-hint:hover {
+  background: #FFB300;
+  transform: translateY(-2px);
 }
 
 /* Game Actions */
@@ -337,6 +400,183 @@
 
 .empty-state p {
   color: #999;
+}
+
+/* Dark Mode Styles */
+.dark-mode .practice-games h2 {
+  color: #ffffff;
+}
+
+.dark-mode .verse-select-label {
+  color: #e0e0e0;
+}
+
+.dark-mode .verse-select {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #ffffff;
+}
+
+.dark-mode .verse-select:focus,
+.dark-mode .verse-select:hover {
+  border-color: #4CAF50;
+  background: #333;
+}
+
+.dark-mode .game-type-btn {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #e0e0e0;
+}
+
+.dark-mode .game-type-btn:hover {
+  border-color: #4CAF50;
+  background: #333;
+}
+
+.dark-mode .game-type-btn.active {
+  background: #4CAF50;
+  color: white;
+}
+
+.dark-mode .game-card {
+  background: #2a2a2a;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .verse-reference-header {
+  color: #66bb6a;
+}
+
+.dark-mode .loading {
+  color: #aaa;
+}
+
+.dark-mode .verse-with-blanks {
+  color: #e0e0e0;
+}
+
+.dark-mode .blank-input {
+  background: #1e1e1e;
+  border-color: #66bb6a;
+  color: #ffffff;
+}
+
+.dark-mode .blank-input:focus {
+  background: #2a2a2a;
+  border-color: #4CAF50;
+}
+
+.dark-mode .hint-length {
+  color: #aaa;
+}
+
+.dark-mode .blank-space {
+  color: #66bb6a;
+}
+
+.dark-mode .game-input {
+  background: #1e1e1e;
+  border-color: #555;
+  color: #ffffff;
+}
+
+.dark-mode .game-input:focus {
+  border-color: #4CAF50;
+  background: #2a2a2a;
+}
+
+.dark-mode .selected-words-area {
+  background: #1e1e1e;
+  border-color: #555;
+}
+
+.dark-mode .placeholder-text {
+  color: #777;
+}
+
+.dark-mode .word-bank {
+  background: #2a2a2a;
+  border-color: #555;
+}
+
+.dark-mode .word-btn {
+  background: #333;
+  border-color: #555;
+  color: #e0e0e0;
+}
+
+.dark-mode .word-btn:hover {
+  border-color: #4CAF50;
+  background: #3a3a3a;
+}
+
+.dark-mode .word-btn.selected {
+  background: #4CAF50;
+  color: white;
+}
+
+.dark-mode .hint-text {
+  background: #1e2a3d;
+  color: #64b5f6;
+}
+
+.dark-mode .btn-hint {
+  background: #FF9800;
+  color: white;
+}
+
+.dark-mode .btn-hint:hover {
+  background: #F57C00;
+}
+
+.dark-mode .btn-check {
+  background: #4CAF50;
+}
+
+.dark-mode .btn-show {
+  background: #2196F3;
+}
+
+.dark-mode .result.correct {
+  background: #1e3a1e;
+  color: #66bb6a;
+}
+
+.dark-mode .result.incorrect {
+  background: #3d1e1e;
+  color: #ff6b6b;
+}
+
+.dark-mode .answer-display {
+  background: #1e1e1e;
+  border-left-color: #4CAF50;
+  color: #e0e0e0;
+}
+
+.dark-mode .answer-display strong {
+  color: #66bb6a;
+}
+
+.dark-mode .btn-nav {
+  background: #4CAF50;
+}
+
+.dark-mode .btn-nav.btn-reset {
+  background: #FF9800;
+}
+
+.dark-mode .btn-nav:disabled {
+  background: #444;
+  opacity: 0.5;
+}
+
+.dark-mode .empty-state h2 {
+  color: #aaa;
+}
+
+.dark-mode .empty-state p {
+  color: #777;
 }
 
 @media (max-width: 768px) {

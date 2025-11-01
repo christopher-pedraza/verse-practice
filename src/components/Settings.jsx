@@ -15,19 +15,28 @@ export default function Settings({ settings, onSettingsChange }) {
   // Check if using default API key
   useEffect(() => {
     const defaultKey = import.meta.env.VITE_BIBLE_API_KEY;
-    setUsingDefaultKey(!!defaultKey && !settings.bibleApiKey);
+    const hasDefaultKey = !!defaultKey;
+    const hasUserKey = !!settings.bibleApiKey;
+    setUsingDefaultKey(hasDefaultKey && !hasUserKey);
   }, [settings.bibleApiKey]);
 
   // Load languages when API is enabled
   useEffect(() => {
     if (settings.useApiVersion) {
-      loadLanguages();
+      const defaultKey = import.meta.env.VITE_BIBLE_API_KEY;
+      // Only load if we have a key (user's or default)
+      if (settings.bibleApiKey || defaultKey) {
+        loadLanguages();
+      } else {
+        setError('Please enter an API key or configure a default key.');
+      }
     }
-  }, [settings.useApiVersion]);
+  }, [settings.useApiVersion, settings.bibleApiKey]);
 
   // Load available Bibles when language changes
   useEffect(() => {
-    if (settings.selectedLanguage && settings.useApiVersion) {
+    const defaultKey = import.meta.env.VITE_BIBLE_API_KEY;
+    if (settings.selectedLanguage && settings.useApiVersion && (settings.bibleApiKey || defaultKey)) {
       loadBibles();
     }
   }, [settings.selectedLanguage, settings.bibleApiKey]);
@@ -137,11 +146,15 @@ export default function Settings({ settings, onSettingsChange }) {
         <div className="setting-group api-settings">
           <h3>🔑 API.Bible Configuration</h3>
           
-          {usingDefaultKey && (
+          {usingDefaultKey ? (
             <div className="info-banner">
-              ℹ️ Using default API key. You can enter your own key below for higher rate limits.
+              ✅ Using default API key from server. You can optionally enter your own key below for personal rate limits.
             </div>
-          )}
+          ) : !settings.bibleApiKey && !import.meta.env.VITE_BIBLE_API_KEY ? (
+            <div className="error">
+              ⚠️ No API key configured. Please enter your API key below or configure a default key in the server.
+            </div>
+          ) : null}
 
           <label>
             API Key {usingDefaultKey && <span className="optional-text">(Optional - using default)</span>}:
@@ -150,7 +163,7 @@ export default function Settings({ settings, onSettingsChange }) {
                 type={showApiKey ? 'text' : 'password'}
                 value={settings.bibleApiKey || ''}
                 onChange={(e) => handleSettingChange('bibleApiKey', e.target.value)}
-                placeholder={usingDefaultKey ? "Using default key" : "Enter your API.Bible key"}
+                placeholder={usingDefaultKey ? "Using default key - enter your own to override" : "Enter your API.Bible key"}
                 className="input-full"
               />
               <button
@@ -164,26 +177,28 @@ export default function Settings({ settings, onSettingsChange }) {
           </label>
           <p className="hint">
             Get your free API key at <a href="https://scripture.api.bible" target="_blank" rel="noopener noreferrer">scripture.api.bible</a>
-            {usingDefaultKey && " for unlimited requests"}
+            {usingDefaultKey && " for unlimited personal requests"}
           </p>
 
-          <label>
-            Language:
-            <select
-              value={settings.selectedLanguage || 'eng'}
-              onChange={(e) => handleSettingChange('selectedLanguage', e.target.value)}
-              className="input-full"
-            >
-              <option value="">-- Select a language --</option>
-              {languages.map((lang) => (
-                <option key={lang.id} value={lang.id}>
-                  {lang.name} ({lang.nameLocal || lang.id})
-                </option>
-              ))}
-            </select>
-          </label>
+          {(settings.bibleApiKey || import.meta.env.VITE_BIBLE_API_KEY) && (
+            <>
+              <label>
+                Language:
+                <select
+                  value={settings.selectedLanguage || 'eng'}
+                  onChange={(e) => handleSettingChange('selectedLanguage', e.target.value)}
+                  className="input-full"
+                >
+                  <option value="">-- Select a language --</option>
+                  {languages.map((lang) => (
+                    <option key={lang.id} value={lang.id}>
+                      {lang.name} ({lang.nameLocal || lang.id})
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-          {settings.selectedLanguage && (
+              {settings.selectedLanguage && (
             <>
               <label>
                 Search Bible Version:
@@ -223,6 +238,8 @@ export default function Settings({ settings, onSettingsChange }) {
               <button onClick={handleClearCache} className="btn-secondary">
                 Clear API Cache
               </button>
+              </>
+            )}
             </>
           )}
         </div>

@@ -11,10 +11,12 @@ export default function PracticeGames({ verses, settings }) {
   // Game states
   const [userInput, setUserInput] = useState('');
   const [blankedWords, setBlankedWords] = useState([]);
+  const [blankInputs, setBlankInputs] = useState({});
   const [shuffledWords, setShuffledWords] = useState([]);
   const [selectedWords, setSelectedWords] = useState([]);
   const [gameComplete, setGameComplete] = useState(false);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [revealedWords, setRevealedWords] = useState([]);
 
   useEffect(() => {
     if (verses.length > 0) {
@@ -98,38 +100,73 @@ export default function PracticeGames({ verses, settings }) {
     setShowAnswer(false);
     setSelectedWords([]);
     setIsCorrect(false);
+    setBlankInputs({});
+    setRevealedWords([]);
 
     const words = displayVerse.text.split(/\s+/);
 
     if (gameType === 'fillBlank') {
-      // Remove every 3rd-5th word
+      // Randomly select 20-30% of words to blank out
+      const blankCount = Math.max(2, Math.floor(words.length * 0.25));
+      const blankIndices = new Set();
+      
+      // Don't blank the first or last word
+      while (blankIndices.size < blankCount) {
+        const randomIdx = Math.floor(Math.random() * (words.length - 2)) + 1;
+        blankIndices.add(randomIdx);
+      }
+      
       const blanked = words.map((word, idx) => ({
         word,
-        isBlank: idx % 4 === 0 && idx > 0
+        isBlank: blankIndices.has(idx),
+        id: `blank-${idx}`
       }));
       setBlankedWords(blanked);
+      
+      // Initialize blank inputs
+      const inputs = {};
+      blanked.forEach((item, idx) => {
+        if (item.isBlank) {
+          inputs[idx] = '';
+        }
+      });
+      setBlankInputs(inputs);
     } else if (gameType === 'wordOrder') {
       // Shuffle all words
       const shuffled = [...words].sort(() => Math.random() - 0.5);
       setShuffledWords(shuffled);
+    } else if (gameType === 'typing') {
+      // Initialize with first word revealed
+      setRevealedWords([words[0]]);
     }
   };
 
+  const handleBlankInput = (index, value) => {
+    setBlankInputs({
+      ...blankInputs,
+      [index]: value
+    });
+  };
+
   const [isCorrect, setIsCorrect] = useState(false);
+
+  const revealMoreWords = () => {
+    const words = displayVerse.text.split(/\s+/);
+    if (revealedWords.length < words.length) {
+      setRevealedWords(words.slice(0, revealedWords.length + 3));
+    }
+  };
 
   const checkAnswer = () => {
     let correct = false;
 
     if (gameType === 'fillBlank') {
-      const userWords = userInput.toLowerCase().split(/\s+/).filter(w => w);
-      const correctWords = blankedWords
-        .filter(w => w.isBlank)
-        .map(w => w.word.toLowerCase().replace(/[.,!?;:"']/g, ''));
-      
-      correct = userWords.length === correctWords.length &&
-        userWords.every((word, idx) => 
-          correctWords[idx].includes(word) || word.includes(correctWords[idx])
-        );
+      correct = blankedWords.every((item, idx) => {
+        if (!item.isBlank) return true;
+        const userWord = (blankInputs[idx] || '').toLowerCase().replace(/[.,!?;:"']/g, '').trim();
+        const correctWord = item.word.toLowerCase().replace(/[.,!?;:"']/g, '');
+        return userWord === correctWord || correctWord.includes(userWord);
+      });
     } else if (gameType === 'wordOrder') {
       const correctOrder = displayVerse.text.toLowerCase().replace(/[.,!?;:"']/g, '');
       const userOrder = selectedWords.join(' ').toLowerCase().replace(/[.,!?;:"']/g, '');
@@ -153,6 +190,30 @@ export default function PracticeGames({ verses, settings }) {
     const word = selectedWords[index];
     setShuffledWords([...shuffledWords, word]);
     setSelectedWords(selectedWords.filter((_, idx) => idx !== index));
+  };
+
+  const [draggedIndex, setDraggedIndex] = useState(null);
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    const newWords = [...selectedWords];
+    const draggedWord = newWords[draggedIndex];
+    newWords.splice(draggedIndex, 1);
+    newWords.splice(index, 0, draggedWord);
+    
+    setSelectedWords(newWords);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const nextVerse = () => {
@@ -237,21 +298,22 @@ export default function PracticeGames({ verses, settings }) {
               <div className="verse-with-blanks">
                 {blankedWords.map((item, idx) => (
                   item.isBlank ? (
-                    <span key={idx} className="blank-space">
-                      {settings.showHints && `(${item.word.length})`} _____
+                    <span key={idx} className="blank-inline">
+                      {settings.showHints && <span className="hint-length">({item.word.length})</span>}
+                      <input
+                        type="text"
+                        className="blank-input"
+                        value={blankInputs[idx] || ''}
+                        onChange={(e) => handleBlankInput(idx, e.target.value)}
+                        placeholder="____"
+                        style={{ width: `${Math.max(50, item.word.length * 10)}px` }}
+                      />
                     </span>
                   ) : (
                     <span key={idx}>{item.word} </span>
                   )
                 ))}
               </div>
-              <textarea
-                value={userInput}
-                onChange={(e) => setUserInput(e.target.value)}
-                placeholder="Type the missing words here..."
-                className="game-input"
-                rows="3"
-              />
             </div>
           )}
 
@@ -265,7 +327,11 @@ export default function PracticeGames({ verses, settings }) {
                     <button
                       key={idx}
                       onClick={() => handleRemoveWord(idx)}
-                      className="word-btn selected"
+                      className={`word-btn selected draggable ${draggedIndex === idx ? 'dragging' : ''}`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={(e) => handleDragOver(e, idx)}
+                      onDragEnd={handleDragEnd}
                     >
                       {word}
                     </button>
@@ -288,9 +354,9 @@ export default function PracticeGames({ verses, settings }) {
 
           {gameType === 'typing' && (
             <div className="typing-game">
-              {settings.showHints && (
+              {settings.showHints && revealedWords.length > 0 && (
                 <div className="hint-text">
-                  First word: {displayVerse.text.split(' ')[0]}
+                  <strong>Revealed words:</strong> {revealedWords.join(' ')}...
                 </div>
               )}
               <textarea
@@ -300,6 +366,11 @@ export default function PracticeGames({ verses, settings }) {
                 className="game-input"
                 rows="5"
               />
+              {settings.showHints && revealedWords.length < displayVerse.text.split(/\s+/).length && (
+                <button onClick={revealMoreWords} className="btn-hint">
+                  💡 Show More Words
+                </button>
+              )}
             </div>
           )}
 
