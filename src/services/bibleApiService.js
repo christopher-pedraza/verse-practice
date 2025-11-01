@@ -1,5 +1,7 @@
 const BIBLE_API_BASE = 'https://rest.api.bible/v1';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+// Default API key from environment variable (optional)
+const DEFAULT_API_KEY = import.meta.env.VITE_BIBLE_API_KEY || '';
 
 /**
  * Bible API service with caching
@@ -7,6 +9,13 @@ const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 class BibleApiService {
   constructor() {
     this.cache = this.loadCache();
+  }
+
+  /**
+   * Get the API key to use (user's key or default)
+   */
+  getApiKey(userApiKey) {
+    return userApiKey || DEFAULT_API_KEY;
   }
 
   /**
@@ -78,10 +87,20 @@ class BibleApiService {
   }
 
   /**
+   * Get list of available languages
+   */
+  async getLanguages(apiKey) {
+    const effectiveKey = this.getApiKey(apiKey);
+    const data = await this.request('/bibles/languages', effectiveKey);
+    return data.data || [];
+  }
+
+  /**
    * Get list of available Bible versions
    */
   async getBibles(apiKey, language = 'eng') {
-    const data = await this.request(`/bibles?language=${language}`, apiKey);
+    const effectiveKey = this.getApiKey(apiKey);
+    const data = await this.request(`/bibles?language=${language}`, effectiveKey);
     return data.data || [];
   }
 
@@ -90,7 +109,8 @@ class BibleApiService {
    */
   async getVerse(apiKey, bibleId, verseReference) {
     try {
-      const data = await this.request(`/bibles/${bibleId}/verses/${verseReference}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false&include-verse-spans=false`, apiKey);
+      const effectiveKey = this.getApiKey(apiKey);
+      const data = await this.request(`/bibles/${bibleId}/verses/${verseReference}?content-type=text&include-notes=false&include-titles=false&include-chapter-numbers=false&include-verse-numbers=false&include-verse-spans=false`, effectiveKey);
       return data.data;
     } catch (error) {
       console.error('Error fetching verse:', error);

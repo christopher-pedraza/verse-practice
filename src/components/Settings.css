@@ -137,3 +137,33 @@
 .setting-group label span {
   font-weight: normal;
 }
+
+.optional-text {
+  font-size: 0.85em;
+  color: #666;
+  font-style: italic;
+}
+
+.info-banner {
+  background: #e3f2fd;
+  color: #1976d2;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  border-left: 4px solid #2196F3;
+  font-size: 0.95em;
+}
+
+.search-input {
+  background: #f5f5f5;
+  border: 2px solid #ddd !important;
+}
+
+.search-input:focus {
+  background: white;
+}
+
+select[size] {
+  height: auto !important;
+  padding: 8px;
+}

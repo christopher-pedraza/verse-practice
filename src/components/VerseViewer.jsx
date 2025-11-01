@@ -7,6 +7,8 @@ export default function VerseViewer({ verses, settings }) {
   const [displayVerse, setDisplayVerse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showReference, setShowReference] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showVerseList, setShowVerseList] = useState(false);
 
   useEffect(() => {
     if (verses.length > 0) {
@@ -99,6 +101,19 @@ export default function VerseViewer({ verses, settings }) {
     setShowReference(!showReference);
   };
 
+  const toggleVerseList = () => {
+    setShowVerseList(!showVerseList);
+  };
+
+  const filteredVerses = verses.filter(verse => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      verse.reference.toLowerCase().includes(query) ||
+      verse.text.toLowerCase().includes(query)
+    );
+  });
+
   if (verses.length === 0) {
     return (
       <div className="verse-viewer">
@@ -170,18 +185,61 @@ export default function VerseViewer({ verses, settings }) {
       </div>
 
       <div className="verse-list">
-        <h3>All Verses</h3>
-        <div className="verse-chips">
-          {verses.map((verse, index) => (
-            <button
-              key={verse.id}
-              onClick={() => setCurrentIndex(index)}
-              className={`verse-chip ${index === currentIndex ? 'active' : ''}`}
-            >
-              {verse.reference}
-            </button>
-          ))}
+        <div className="verse-list-header">
+          <h3>All Verses ({verses.length})</h3>
+          <button onClick={toggleVerseList} className="btn-toggle-list">
+            {showVerseList ? 'Hide List ▲' : 'Show List ▼'}
+          </button>
         </div>
+
+        {showVerseList && (
+          <>
+            {verses.length > 5 && (
+              <div className="verse-search">
+                <input
+                  type="text"
+                  placeholder="Search verses by reference or text..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="verse-search-input"
+                />
+                {searchQuery && (
+                  <button onClick={() => setSearchQuery('')} className="btn-clear-search">
+                    ✕
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className={`verse-chips ${verses.length > 20 ? 'scrollable' : ''}`}>
+              {filteredVerses.length > 0 ? (
+                filteredVerses.map((verse, index) => {
+                  const actualIndex = verses.findIndex(v => v.id === verse.id);
+                  return (
+                    <button
+                      key={verse.id}
+                      onClick={() => {
+                        setCurrentIndex(actualIndex);
+                        setSearchQuery('');
+                      }}
+                      className={`verse-chip ${actualIndex === currentIndex ? 'active' : ''}`}
+                    >
+                      {verse.reference}
+                    </button>
+                  );
+                })
+              ) : (
+                <p className="no-results">No verses found matching "{searchQuery}"</p>
+              )}
+            </div>
+
+            {filteredVerses.length > 0 && searchQuery && (
+              <p className="search-results-info">
+                Showing {filteredVerses.length} of {verses.length} verses
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

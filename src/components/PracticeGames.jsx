@@ -97,6 +97,7 @@ export default function PracticeGames({ verses, settings }) {
     setGameComplete(false);
     setShowAnswer(false);
     setSelectedWords([]);
+    setIsCorrect(false);
 
     const words = displayVerse.text.split(/\s+/);
 
@@ -114,8 +115,10 @@ export default function PracticeGames({ verses, settings }) {
     }
   };
 
+  const [isCorrect, setIsCorrect] = useState(false);
+
   const checkAnswer = () => {
-    let isCorrect = false;
+    let correct = false;
 
     if (gameType === 'fillBlank') {
       const userWords = userInput.toLowerCase().split(/\s+/).filter(w => w);
@@ -123,22 +126,22 @@ export default function PracticeGames({ verses, settings }) {
         .filter(w => w.isBlank)
         .map(w => w.word.toLowerCase().replace(/[.,!?;:"']/g, ''));
       
-      isCorrect = userWords.length === correctWords.length &&
+      correct = userWords.length === correctWords.length &&
         userWords.every((word, idx) => 
           correctWords[idx].includes(word) || word.includes(correctWords[idx])
         );
     } else if (gameType === 'wordOrder') {
       const correctOrder = displayVerse.text.toLowerCase().replace(/[.,!?;:"']/g, '');
       const userOrder = selectedWords.join(' ').toLowerCase().replace(/[.,!?;:"']/g, '');
-      isCorrect = correctOrder === userOrder;
+      correct = correctOrder === userOrder;
     } else if (gameType === 'typing') {
-      const correct = displayVerse.text.toLowerCase().replace(/[.,!?;:"']/g, '');
+      const correct_text = displayVerse.text.toLowerCase().replace(/[.,!?;:"']/g, '');
       const user = userInput.toLowerCase().replace(/[.,!?;:"']/g, '');
-      isCorrect = correct === user;
+      correct = correct_text === user;
     }
 
+    setIsCorrect(correct);
     setGameComplete(true);
-    return isCorrect;
   };
 
   const handleWordClick = (word, index) => {
@@ -179,8 +182,22 @@ export default function PracticeGames({ verses, settings }) {
     <div className="practice-games">
       <div className="game-header">
         <h2>🎮 Practice Games</h2>
-        <div className="verse-counter">
-          Verse {currentIndex + 1} of {verses.length}
+        <div className="verse-selector-container">
+          <label htmlFor="verse-select" className="verse-select-label">
+            Select Verse:
+          </label>
+          <select
+            id="verse-select"
+            value={currentIndex}
+            onChange={(e) => setCurrentIndex(parseInt(e.target.value))}
+            className="verse-select"
+          >
+            {verses.map((verse, index) => (
+              <option key={verse.id} value={index}>
+                {index + 1}. {verse.reference}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -296,8 +313,8 @@ export default function PracticeGames({ verses, settings }) {
           </div>
 
           {gameComplete && (
-            <div className={`result ${checkAnswer() ? 'correct' : 'incorrect'}`}>
-              {checkAnswer() ? '✅ Correct! Well done!' : '❌ Not quite right. Keep practicing!'}
+            <div className={`result ${isCorrect ? 'correct' : 'incorrect'}`}>
+              {isCorrect ? '✅ Correct! Well done!' : '❌ Not quite right. Keep practicing!'}
             </div>
           )}
 

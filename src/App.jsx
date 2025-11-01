@@ -18,6 +18,7 @@ function App() {
     useApiVersion: false,
     bibleApiKey: '',
     selectedBibleId: '',
+    selectedLanguage: 'eng',
     showHints: true
   });
 

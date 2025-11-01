@@ -3,24 +3,59 @@ import { bibleApiService } from '../services/bibleApiService';
 import './Settings.css';
 
 export default function Settings({ settings, onSettingsChange }) {
+  const [languages, setLanguages] = useState([]);
   const [bibles, setBibles] = useState([]);
+  const [filteredBibles, setFilteredBibles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
+  const [bibleSearchQuery, setBibleSearchQuery] = useState('');
+  const [usingDefaultKey, setUsingDefaultKey] = useState(false);
 
-  // Load available Bibles when API key is provided
+  // Check if using default API key
   useEffect(() => {
-    if (settings.bibleApiKey && settings.useApiVersion) {
+    const defaultKey = import.meta.env.VITE_BIBLE_API_KEY;
+    setUsingDefaultKey(!!defaultKey && !settings.bibleApiKey);
+  }, [settings.bibleApiKey]);
+
+  // Load languages when API is enabled
+  useEffect(() => {
+    if (settings.useApiVersion) {
+      loadLanguages();
+    }
+  }, [settings.useApiVersion]);
+
+  // Load available Bibles when language changes
+  useEffect(() => {
+    if (settings.selectedLanguage && settings.useApiVersion) {
       loadBibles();
     }
-  }, [settings.bibleApiKey]);
+  }, [settings.selectedLanguage, settings.bibleApiKey]);
+
+  const loadLanguages = async () => {
+    try {
+      const langsData = await bibleApiService.getLanguages(settings.bibleApiKey);
+      setLanguages(langsData);
+      // Set default language if not set
+      if (!settings.selectedLanguage && langsData.length > 0) {
+        const defaultLang = langsData.find(l => l.id === 'eng') || langsData[0];
+        handleSettingChange('selectedLanguage', defaultLang.id);
+      }
+    } catch (err) {
+      console.error('Failed to load languages:', err);
+    }
+  };
 
   const loadBibles = async () => {
     setLoading(true);
     setError('');
     try {
-      const biblesData = await bibleApiService.getBibles(settings.bibleApiKey);
+      const biblesData = await bibleApiService.getBibles(
+        settings.bibleApiKey, 
+        settings.selectedLanguage || 'eng'
+      );
       setBibles(biblesData);
+      setFilteredBibles(biblesData);
     } catch (err) {
       setError('Failed to load Bible versions. Please check your API key.');
       console.error(err);
@@ -28,6 +63,21 @@ export default function Settings({ settings, onSettingsChange }) {
       setLoading(false);
     }
   };
+
+  // Filter bibles based on search query
+  useEffect(() => {
+    if (bibleSearchQuery) {
+      const query = bibleSearchQuery.toLowerCase();
+      const filtered = bibles.filter(bible => 
+        bible.name.toLowerCase().includes(query) ||
+        bible.abbreviation?.toLowerCase().includes(query) ||
+        bible.description?.toLowerCase().includes(query)
+      );
+      setFilteredBibles(filtered);
+    } else {
+      setFilteredBibles(bibles);
+    }
+  }, [bibleSearchQuery, bibles]);
 
   const handleSettingChange = (key, value) => {
     onSettingsChange({ ...settings, [key]: value });
@@ -86,14 +136,21 @@ export default function Settings({ settings, onSettingsChange }) {
       {settings.useApiVersion && (
         <div className="setting-group api-settings">
           <h3>🔑 API.Bible Configuration</h3>
+          
+          {usingDefaultKey && (
+            <div className="info-banner">
+              ℹ️ Using default API key. You can enter your own key below for higher rate limits.
+            </div>
+          )}
+
           <label>
-            API Key:
+            API Key {usingDefaultKey && <span className="optional-text">(Optional - using default)</span>}:
             <div className="api-key-input">
               <input
                 type={showApiKey ? 'text' : 'password'}
                 value={settings.bibleApiKey || ''}
                 onChange={(e) => handleSettingChange('bibleApiKey', e.target.value)}
-                placeholder="Enter your API.Bible key"
+                placeholder={usingDefaultKey ? "Using default key" : "Enter your API.Bible key"}
                 className="input-full"
               />
               <button
@@ -107,10 +164,38 @@ export default function Settings({ settings, onSettingsChange }) {
           </label>
           <p className="hint">
             Get your free API key at <a href="https://scripture.api.bible" target="_blank" rel="noopener noreferrer">scripture.api.bible</a>
+            {usingDefaultKey && " for unlimited requests"}
           </p>
 
-          {settings.bibleApiKey && (
+          <label>
+            Language:
+            <select
+              value={settings.selectedLanguage || 'eng'}
+              onChange={(e) => handleSettingChange('selectedLanguage', e.target.value)}
+              className="input-full"
+            >
+              <option value="">-- Select a language --</option>
+              {languages.map((lang) => (
+                <option key={lang.id} value={lang.id}>
+                  {lang.name} ({lang.nameLocal || lang.id})
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {settings.selectedLanguage && (
             <>
+              <label>
+                Search Bible Version:
+                <input
+                  type="text"
+                  value={bibleSearchQuery}
+                  onChange={(e) => setBibleSearchQuery(e.target.value)}
+                  placeholder="Type to filter versions..."
+                  className="input-full search-input"
+                />
+              </label>
+
               <label>
                 Select Bible Version:
                 <select
@@ -118,11 +203,12 @@ export default function Settings({ settings, onSettingsChange }) {
                   onChange={(e) => handleSettingChange('selectedBibleId', e.target.value)}
                   className="input-full"
                   disabled={loading}
+                  size="10"
                 >
                   <option value="">-- Select a version --</option>
-                  {bibles.map((bible) => (
+                  {filteredBibles.map((bible) => (
                     <option key={bible.id} value={bible.id}>
-                      {bible.name} ({bible.abbreviation})
+                      {bible.name} ({bible.abbreviation || bible.id})
                     </option>
                   ))}
                 </select>
@@ -130,6 +216,9 @@ export default function Settings({ settings, onSettingsChange }) {
 
               {loading && <p className="loading">Loading Bible versions...</p>}
               {error && <p className="error">{error}</p>}
+              {filteredBibles.length === 0 && !loading && bibleSearchQuery && (
+                <p className="hint">No versions found matching "{bibleSearchQuery}"</p>
+              )}
 
               <button onClick={handleClearCache} className="btn-secondary">
                 Clear API Cache

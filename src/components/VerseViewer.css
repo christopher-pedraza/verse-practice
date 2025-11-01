@@ -133,16 +133,87 @@
   padding: 20px;
 }
 
-.verse-list h3 {
-  margin-top: 0;
+.verse-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 15px;
+}
+
+.verse-list h3 {
+  margin: 0;
   color: #555;
+}
+
+.btn-toggle-list {
+  padding: 8px 16px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.btn-toggle-list:hover {
+  background: #45a049;
+}
+
+.verse-search {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.verse-search-input {
+  width: 100%;
+  padding: 12px 40px 12px 12px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.verse-search-input:focus {
+  outline: none;
+  border-color: #4CAF50;
+}
+
+.btn-clear-search {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ddd;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.btn-clear-search:hover {
+  background: #ccc;
 }
 
 .verse-chips {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.verse-chips.scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
 }
 
 .verse-chip {
@@ -178,6 +249,20 @@
 
 .empty-state p {
   color: #999;
+}
+
+.no-results {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+.search-results-info {
+  text-align: center;
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 10px;
 }
 
 @media (max-width: 768px) {
