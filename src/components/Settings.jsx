@@ -215,7 +215,14 @@ export default function Settings({ settings, onSettingsChange }) {
                 Select Bible Version:
                 <select
                   value={settings.selectedBibleId || ''}
-                  onChange={(e) => handleSettingChange('selectedBibleId', e.target.value)}
+                  onChange={(e) => {
+                    const selectedBible = filteredBibles.find(b => b.id === e.target.value);
+                    onSettingsChange({ 
+                      ...settings, 
+                      selectedBibleId: e.target.value,
+                      selectedBibleName: selectedBible ? (selectedBible.abbreviation || selectedBible.name) : ''
+                    });
+                  }}
                   className="input-full"
                   disabled={loading}
                   size="10"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { fetchCSVData } from './services/csvService';
+import { bibleApiService } from './services/bibleApiService';
 import Settings from './components/Settings';
 import VerseViewer from './components/VerseViewer';
 import PracticeGames from './components/PracticeGames';
@@ -21,12 +22,18 @@ function App() {
     useApiVersion: false,
     bibleApiKey: '',
     selectedBibleId: '',
+    selectedBibleName: '',
     selectedLanguage: 'eng',
     showHints: true
   });
 
   // Dark mode state
   const [darkMode, setDarkMode] = useLocalStorage('darkMode', false);
+  
+  // States for header language/version selectors
+  const [languages, setLanguages] = useState([]);
+  const [bibles, setBibles] = useState([]);
+  const [showVersionDropdown, setShowVersionDropdown] = useState(false);
 
   // Initialize CSV URL with default if not set
   useEffect(() => {
@@ -34,6 +41,28 @@ function App() {
       setSettings({ ...settings, csvUrl: defaultCsvUrl });
     }
   }, []);
+
+  // Load languages for header dropdown
+  useEffect(() => {
+    if (settings.useApiVersion) {
+      const apiKey = settings.bibleApiKey || import.meta.env.VITE_BIBLE_API_KEY;
+      if (apiKey) {
+        bibleApiService.getLanguages(apiKey).then(setLanguages).catch(console.error);
+      }
+    }
+  }, [settings.useApiVersion, settings.bibleApiKey]);
+
+  // Load bibles when language changes
+  useEffect(() => {
+    if (settings.useApiVersion && settings.selectedLanguage) {
+      const apiKey = settings.bibleApiKey || import.meta.env.VITE_BIBLE_API_KEY;
+      if (apiKey) {
+        bibleApiService.getBibles(apiKey, settings.selectedLanguage)
+          .then(setBibles)
+          .catch(console.error);
+      }
+    }
+  }, [settings.useApiVersion, settings.selectedLanguage, settings.bibleApiKey]);
 
   // Load verses from CSV when URL changes
   useEffect(() => {
@@ -75,16 +104,51 @@ function App() {
         <div className="header-content">
           <h1>📖 Bible Verse Practice</h1>
           <div className="header-controls">
-            {settings.useApiVersion && settings.selectedBibleId && (
-              <div className="version-display" title="Change in Settings">
-                📖 {settings.selectedBibleId}
+            {settings.useApiVersion && (settings.bibleApiKey || import.meta.env.VITE_BIBLE_API_KEY) ? (
+              <div className="version-selector-container">
+                <select
+                  value={settings.selectedLanguage || 'eng'}
+                  onChange={(e) => setSettings({ ...settings, selectedLanguage: e.target.value })}
+                  className="header-select language-select"
+                  title="Select language"
+                >
+                  {languages.map((lang) => (
+                    <option key={lang.id} value={lang.id}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={settings.selectedBibleId || ''}
+                  onChange={(e) => {
+                    const selectedBible = bibles.find(b => b.id === e.target.value);
+                    setSettings({ 
+                      ...settings, 
+                      selectedBibleId: e.target.value,
+                      selectedBibleName: selectedBible ? selectedBible.abbreviation || selectedBible.name : ''
+                    });
+                  }}
+                  className="header-select version-select"
+                  title="Select Bible version"
+                >
+                  <option value="">Select Version</option>
+                  {bibles.map((bible) => (
+                    <option key={bible.id} value={bible.id}>
+                      {bible.abbreviation || bible.name}
+                    </option>
+                  ))}
+                </select>
+                {settings.selectedBibleName && (
+                  <div className="version-display" title={settings.selectedBibleName}>
+                    📖 {settings.selectedBibleName}
+                  </div>
+                )}
               </div>
-            )}
-            {!settings.useApiVersion && verses.length > 0 && (
+            ) : !settings.useApiVersion && verses.length > 0 ? (
               <div className="version-display" title="Using CSV version">
                 📄 CSV
               </div>
-            )}
+            ) : null}
             <button 
               onClick={() => setDarkMode(!darkMode)} 
               className="theme-toggle"

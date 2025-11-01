@@ -12,6 +12,7 @@ export default function PracticeGames({ verses, settings }) {
   const [userInput, setUserInput] = useState('');
   const [blankedWords, setBlankedWords] = useState([]);
   const [blankInputs, setBlankInputs] = useState({});
+  const [blankStatus, setBlankStatus] = useState({});
   const [shuffledWords, setShuffledWords] = useState([]);
   const [selectedWords, setSelectedWords] = useState([]);
   const [gameComplete, setGameComplete] = useState(false);
@@ -101,6 +102,7 @@ export default function PracticeGames({ verses, settings }) {
     setSelectedWords([]);
     setIsCorrect(false);
     setBlankInputs({});
+    setBlankStatus({});
     setRevealedWords([]);
 
     const words = displayVerse.text.split(/\s+/);
@@ -161,12 +163,29 @@ export default function PracticeGames({ verses, settings }) {
     let correct = false;
 
     if (gameType === 'fillBlank') {
-      correct = blankedWords.every((item, idx) => {
-        if (!item.isBlank) return true;
-        const userWord = (blankInputs[idx] || '').toLowerCase().replace(/[.,!?;:"']/g, '').trim();
-        const correctWord = item.word.toLowerCase().replace(/[.,!?;:"']/g, '');
-        return userWord === correctWord || correctWord.includes(userWord);
+      const status = {};
+      let allCorrect = true;
+      let allFilled = true;
+      
+      blankedWords.forEach((item, idx) => {
+        if (item.isBlank) {
+          const userWord = (blankInputs[idx] || '').toLowerCase().replace(/[.,!?;:"']/g, '').trim();
+          const correctWord = item.word.toLowerCase().replace(/[.,!?;:"']/g, '');
+          
+          if (!userWord) {
+            allFilled = false;
+            status[idx] = 'empty';
+          } else if (userWord === correctWord) {
+            status[idx] = 'correct';
+          } else {
+            status[idx] = 'incorrect';
+            allCorrect = false;
+          }
+        }
       });
+      
+      setBlankStatus(status);
+      correct = allCorrect && allFilled;
     } else if (gameType === 'wordOrder') {
       const correctOrder = displayVerse.text.toLowerCase().replace(/[.,!?;:"']/g, '');
       const userOrder = selectedWords.join(' ').toLowerCase().replace(/[.,!?;:"']/g, '');
@@ -302,11 +321,11 @@ export default function PracticeGames({ verses, settings }) {
                       {settings.showHints && <span className="hint-length">({item.word.length})</span>}
                       <input
                         type="text"
-                        className="blank-input"
+                        className={`blank-input ${blankStatus[idx] || ''}`}
                         value={blankInputs[idx] || ''}
                         onChange={(e) => handleBlankInput(idx, e.target.value)}
                         placeholder="____"
-                        style={{ width: `${Math.max(50, item.word.length * 10)}px` }}
+                        style={{ width: `${Math.max(80, item.word.length * 15)}px` }}
                       />
                     </span>
                   ) : (
