@@ -87,12 +87,28 @@ class BibleApiService {
   }
 
   /**
-   * Get list of available languages
+   * Get list of available languages by extracting from all Bibles
    */
   async getLanguages(apiKey) {
     const effectiveKey = this.getApiKey(apiKey);
-    const data = await this.request('/bibles/languages', effectiveKey);
-    return data.data || [];
+    // Get all bibles first
+    const data = await this.request('/bibles', effectiveKey);
+    const bibles = data.data || [];
+    
+    // Extract unique languages
+    const languagesMap = new Map();
+    bibles.forEach(bible => {
+      if (bible.language && bible.language.id) {
+        languagesMap.set(bible.language.id, {
+          id: bible.language.id,
+          name: bible.language.name,
+          nameLocal: bible.language.nameLocal || bible.language.name
+        });
+      }
+    });
+    
+    // Convert to array and sort by name
+    return Array.from(languagesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   /**
